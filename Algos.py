@@ -6,6 +6,8 @@ import networkx as nx
 # imports Flow
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_flow
+# import Excel
+import xlsxwriter
 
 # classe mere qui modelise un algorithme
 class Algo:
@@ -16,6 +18,7 @@ class Algo:
         self.correlations = {} # dictionnaire de type {"nom": [liste des noms des monnaies corrélées]}
         self.names = [] #liste des noms de toutes les monnaies pour pouvoir les indexer
         self.values = [] #liste des valeurs des monnaies indexées de la même façon
+        self.solution = {} # dictionnaire de type {(couple) : montant}
         self.result = None
 
         #on récupère les données
@@ -45,14 +48,15 @@ class Algo:
             print("Total des compensation :", self.result.total_compensations)
             print("RWA après compensation :", np.sum(self.values)/2)
 
+    def write_to_excel(self, name):
+        pass # à coder
+
+
 #Algorithme Glouton
 class Greedy(Algo):
     name = "Greedy"
     def __init__(self, tab): #on initialise les variables manipulées par l'algo
         Algo.__init__(self, tab)
-        self.RWA = 0
-        self.RWA2 = 0
-        self.solution = []
 
     # realise la compensation et supprime les monnaies de valeur nulle
     def compAndUpdate(self, monnaies):
@@ -103,10 +107,7 @@ class Greedy(Algo):
                 break
             else :
                 val = self.compAndUpdate(best)
-                self.solution.append((best, val))
-        
-        for c in self.pos_court:
-            self.RWA += self.pos_court[c]
+                self.solution[best] = val
 
 class OpLin(Algo):
     name = "OpLin"
@@ -149,6 +150,7 @@ class OpLin(Algo):
         i = 0
         for e in self.G.edges:
             #print(e, self.result.x[i])
+            self.solution[e] = self.result.x[i]
             self.pos_long[e[0]] -= self.result.x[i]
             self.pos_court[e[1]] -= self.result.x[i]
             k = self.names.index(e[0])
@@ -210,6 +212,11 @@ class Flow(Algo):
         puits_index = self.names.index("puits")
 
         self.result = maximum_flow(csr_matrix(matrix), source_index, puits_index)
+
+        arr = self.result.flow.toarray()
+        for e in self.G.edges:
+            if e[0] != "source" and e[1] != "puits":
+                self.solution[e] = arr[self.names.index(e[0])][self.names.index(e[1])]
         
         #mise à jour des positions
         """
