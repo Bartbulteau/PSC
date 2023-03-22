@@ -3,7 +3,7 @@ import random as rd
 import string
 
 def exemple_libre(n):
-    """Genere un tableau de correlation de n monnaies à double entrees. A la case [i,j], 
+    """Genere un tableau de correlation de n monnaies a double entrees. A la case [i,j], 
     on trouve si les monnaies i et j sont correlees ou non en fontion de la valeur du booleen"""
     
     tab = np.zeros((n,n))
@@ -25,21 +25,8 @@ def exemple_libre(n):
     return np.logical_or(tab,tab)
 
 
-
-def nomination(n):
-    """ ! Facultatif ! Genere n strings de 3 lettres aleatoires a utiliser comme des noms de monnaie"""
-    """tab = []
-    while (len(tab)<n):
-        str=""
-        for j in range(3):
-            str += rd.choice(string.ascii_uppercase)
-        if str not in tab:
-            tab.append(str)
-    return tab"""
-    return [str(i) for i in range(n)]
-
 def generation_pos(tab):
-
+    """Genere aleatoirement les positions des monnaies correlees entre elles"""
     test = True
     n = len(tab)
     arret = 0
@@ -54,14 +41,16 @@ def generation_pos(tab):
             tab[ind_2][0] -= val
             arret += 1              #On n'incremente _arret que si la condition if a ete verifiee
 
+def nomination(n):
+    return [str(i) for i in range(n)]
 
 
 def creer_tab(n):
-    """Cree un tableau d'exemple au format initial, avec les positions set a 0
-    et en remplissant la fin des lignes par des str vides"""
+    """Cree un tableau d'exemple tel que la premiere colonne represente la position de la monnaie i,
+    la suite de la ligne i est utillisee pour indiquer les monnaies correlees a i.
+    On remplit par des -1 la fin des lignes pour obtenir un tableau."""
 
     corr = exemple_libre(n)
-    index = nomination(n)
     tab=[]
     for i in range(n):
         tab.append([0])   #Crée les lignes du tableau
@@ -69,8 +58,8 @@ def creer_tab(n):
     for i in range(n):
         for j in range(i-1):
             if corr[i][j]:
-                tab[i].append(j) #tab[i].append(index[j])
-                tab[j].append(i) #tab[j].append(index[i])
+                tab[i].append(j) 
+                tab[j].append(i) 
     
     max_len = 0
     
@@ -83,7 +72,6 @@ def creer_tab(n):
         while(len(tab[i])<max_len):
             tab[i].append(int(-1))
 
-    #exemple = completerListeArray(tab)
-    return np.array(tab)
+    return np.array(tab), nomination(n)
 
-#print(creer_tab(8))
+print(creer_tab(8))
