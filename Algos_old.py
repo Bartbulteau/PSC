@@ -12,23 +12,30 @@ import xlsxwriter
 # classe mere qui modelise un algorithme
 class Algo:
     name = ""
-    def __init__(self, tab, names):
+    def __init__(self, tab):
         self.pos_long = {} # dictionnaire de type {"nom": montant} pour les positions longues
         self.pos_court = {} # dictionnaire de type {"nom": montant} pour les positions courtes
         self.correlations = {} # dictionnaire de type {"nom": [liste des noms des monnaies corrélées]}
-        self.names = names
+        self.names = [] #liste des noms de toutes les monnaies pour pouvoir les indexer
+        self.values = [] #liste des valeurs des monnaies indexées de la même façon
+        self.solution = {} # dictionnaire de type {(couple) : montant}
+        self.result = None
 
         #on récupère les données
-        for i in range(len(tab)):
-            if tab[i][0] > 0:
-                self.pos_long[self.names[i]] = tab[i][0]
+        for line in tab:
+            val = int(line[1])
+            name = line[0]
+            self.names.append(name)
+            self.values.append(abs(val))
+            if val > 0:
+                self.pos_long[name] = val
             else:
-                self.pos_long[self.names[i]] = -tab[i][0]
+                self.pos_court[name] = -val
             corr = []
-            for ind in tab[i][1:]:
-                if ind != -1:
-                    corr.append(self.names[ind])
-            self.correlations[self.names[i]] = corr            
+            for i in line[2:]:
+                if i != '':
+                    corr.append(tab[int(i)][0])
+            self.correlations[name] = corr
 
     def optimize(self):
         pass
