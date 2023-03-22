@@ -74,4 +74,4 @@ def creer_tab(n):
 
     return np.array(tab), nomination(n)
 
-print(creer_tab(8))
+#print(creer_tab(8))
