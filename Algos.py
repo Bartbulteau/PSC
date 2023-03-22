@@ -28,10 +28,10 @@ class Algo:
             for ind in tab[i][1:]:
                 if ind != -1:
                     corr.append(self.names[ind])
-            self.correlations[self.names[i]] = corr            
+            self.correlations[self.names[i]] = corr
 
     def optimize(self):
-        pass
+        pass # code specifique a chaque algo
 
     def run(self, showResult=True):
         if showResult:
