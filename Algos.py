@@ -48,8 +48,8 @@ class Algo:
 #Algorithme Glouton
 class Greedy(Algo):
     name = "Greedy"
-    def __init__(self, tab): #on initialise les variables manipulées par l'algo
-        Algo.__init__(self, tab)
+    def __init__(self, tab, names): #on initialise les variables manipulées par l'algo
+        Algo.__init__(self, tab, names)
 
     # realise la compensation et supprime les monnaies de valeur nulle
     def compAndUpdate(self, monnaies):
@@ -104,8 +104,8 @@ class Greedy(Algo):
 
 class OpLin(Algo):
     name = "OpLin"
-    def __init__(self, tab):
-        Algo.__init__(self, tab)
+    def __init__(self, tab, names):
+        Algo.__init__(self, tab, names)
         
         # création du graphe représentant le problème
         G = nx.DiGraph()
@@ -154,8 +154,8 @@ class OpLin(Algo):
 
 class Flow(Algo):
     name = "Flow"
-    def __init__(self, tab):
-        Algo.__init__(self, tab)
+    def __init__(self, tab, names):
+        Algo.__init__(self, tab, names)
 
         #ajout de la source et du puits
         self.names.append("source")
