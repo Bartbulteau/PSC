@@ -3,3 +3,9 @@ __pycache__/*
 .vscode
 main.ipynb
 *.pyc
+__pycache__
+Algos_old.py
+*.xlsx
+*.csv
+*.json
+old
