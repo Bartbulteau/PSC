@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # generateur d'exemples
-from Exemples2 import creer_exemple, creer_exemple_simple
+from Exemples import creer_exemple, creer_exemple_simple
 
 # algorithmes d'optimisation
 from scipy.optimize import linprog
