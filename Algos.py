@@ -39,6 +39,7 @@ class Algo:
             else:
                 self.pos_court[names[i]] = -tab[i][0]
                 self.values[i] = -tab[i][0]
+
             self.correlations[names[i]] = []
             j = 1
             while  j < len(tab[i]) and tab[i][j] != -1:
@@ -220,79 +221,94 @@ class Flow(Algo):
 
         #print(self.solution)
 
+"""
+Algrithme implémentant l'optimisation par algorithme glouton
+"""
 class Greedy(Algo):
     def __init__(self, tab, names):
         super().__init__(tab, names)
         self.name = "Greedy"
+        self.pos_long_copy = self.pos_long.copy()
+        self.pos_court_copy = self.pos_court.copy()
+        self.correlations_copy = self.correlations.copy()
     
     # realise la compensation et supprime les monnaies de valeur nulle
     def compAndUpdate(self, monnaies):
-        val = self.pos_long[monnaies[0]] - self.pos_court[monnaies[1]]
+        val = self.pos_long_copy[monnaies[0]] - self.pos_court_copy[monnaies[1]]
         if val > 0:
-            self.pos_long[monnaies[0]] = val
-            del self.pos_court[monnaies[1]]
-            del self.correlations[monnaies[1]]
+            # necessaire pour l'output excel
+            self.values[self.names.index(monnaies[0])] -= self.pos_court_copy[monnaies[1]]
+            self.values[self.names.index(monnaies[1])] = 0
+            self.solution[monnaies] = self.pos_court_copy[monnaies[1]]
+
+            self.pos_long_copy[monnaies[0]] = val
+            del self.pos_court_copy[monnaies[1]]
+            del self.correlations_copy[monnaies[1]]
         elif val < 0:
-            self.pos_court[monnaies[1]] = -val
-            del self.pos_long[monnaies[0]]
-            del self.correlations[monnaies[0]]
+            # necessaire pour l'output excel
+            self.values[self.names.index(monnaies[0])] = 0
+            self.values[self.names.index(monnaies[1])] -= self.pos_long_copy[monnaies[0]]
+            self.solution[monnaies] = self.pos_long_copy[monnaies[0]]
+
+            self.pos_court_copy[monnaies[1]] = -val
+            del self.pos_long_copy[monnaies[0]]
+            del self.correlations_copy[monnaies[0]]
         else:
-            del self.pos_long[monnaies[0]]
-            del self.correlations[monnaies[0]]
-            del self.pos_court[monnaies[1]]
-            del self.correlations[monnaies[1]]
-        return val
+            # necessaire pour l'output excel
+            self.values[self.names.index(monnaies[0])] = 0
+            self.values[self.names.index(monnaies[1])] = 0
+            self.solution[monnaies] = self.pos_long_copy[monnaies[0]]
+
+            del self.pos_long_copy[monnaies[0]]
+            del self.correlations_copy[monnaies[0]]
+            del self.pos_court_copy[monnaies[1]]
+            del self.correlations_copy[monnaies[1]]
+    
+        return abs(val)
     
     # verifie s'il reste des monnaies compensables (de montants non nuls et correlees a des monnaies de montant non nul)
     def shouldContinue(self):
-        for c in self.pos_court:
-            if len(set(self.correlations[c]) and set(self.correlations.keys()) and set(self.pos_long.keys())) != 0:
+        for c in self.pos_court_copy:
+            if len(set(self.correlations_copy[c]) and set(self.correlations_copy.keys()) and set(self.pos_long_copy.keys())) != 0:
                 return True
-        for l in self.pos_long:
-            if len(set(self.correlations[l]) and set(self.correlations.keys()) and set(self.pos_court.keys())) != 0:
+        for l in self.pos_long_copy:
+            if len(set(self.correlations_copy[l]) and set(self.correlations_copy.keys()) and set(self.pos_court_copy.keys())) != 0:
                 return True
         return False
 
     def f(self, couple):
-        return -(len(self.correlations[couple[0]]) + len(self.correlations[couple[1]]))
+        return -(len(self.correlations_copy[couple[0]]) + len(self.correlations_copy[couple[1]]))
 
     # coeur de l'algo : trouve le couple qui maximise la règle de décision f, effectue la compensation et recommence jusqu'a ce qu'il ne reste plus de  couples valides
     def optimize(self):
         while(self.shouldContinue()):
             best=()
-            for c in self.pos_court:
-                for l in self.pos_long:
-                    if l in self.correlations[c]:
+            for c in self.pos_court_copy:
+                for l in self.pos_long_copy:
+                    if l in self.correlations_copy[c]:
                         best = (l, c)
                         break
-            for c in self.pos_court:
-                for l in self.pos_long:
-                    if c in self.correlations[l]:
+            for c in self.pos_court_copy:
+                for l in self.pos_long_copy:
+                    if c in self.correlations_copy[l]:
                         if self.f((l, c)) > self.f(best):
                             best = (l, c)
             if best == ():
                 break
             else :
-                val = self.compAndUpdate(best)
-                self.solution[best] = val
-
-        i = 0
-        for couple in self.solution.keys():
-            i += self.solution[couple]
-        print(i)
-
-
+                self.compAndUpdate(best)
 
 def main():
     tab, names = creer_exemple_simple(30)
-    algo = Flow(tab, names)
+    algo = Greedy(tab, names)
     algo.optimize()
-    algo.write_to_excel("flow.xlsx")
-    algo2 = OpLin(tab, names)
-    algo2.optimize()
-    algo2.write_to_excel("oplin.xlsx")
-    #print(algo.solution)
-
+    algo.write_to_excel("greedy.xlsx")
+    algoflow = Flow(tab, names)
+    algoflow.optimize()
+    algoflow.write_to_excel("flow.xlsx")
+    algooplin = OpLin(tab, names)
+    algooplin.optimize()
+    algooplin.write_to_excel("oplin.xlsx")
 
 if __name__ == "__main__":
     main()
