@@ -12,7 +12,12 @@ from scipy.sparse.csgraph import maximum_flow
 
 # gestion des fichiers excel
 import xlsxwriter
+
+#divers
+import itertools
 import copy
+
+from timeit import default_timer as timer
 
 """
 Classe de base servant de squelette aux algorithmes d'optimisation
@@ -113,8 +118,6 @@ class Algo:
                 else:
                     worksheet.write(4+i, 4+j, '', formatgris)
 
-        # comment ajouter une bordure ?
-
         # fermer le fichier
         workbook.close()
 
@@ -149,7 +152,9 @@ class OpLin(Algo):
         c = np.full(nb_variables, -1)
 
         # résolution du problème
+        t0 = timer()
         self.result = linprog(c=c, A_ub=A, b_ub=self.values)
+        t1 = timer()
 
         # mise à jour des positions
         i = 0
@@ -161,6 +166,7 @@ class OpLin(Algo):
 
         # calcul du RWA
         self.RWA = np.sum(self.values)/2
+        return t1-t0
 
 """
 Algrithme implémentant l'optimisation par flot maximal
@@ -207,7 +213,9 @@ class Flow(Algo):
         source_index = len(self.names) - 2
         puits_index = len(self.names) - 1
 
+        t0 = timer()
         self.result = maximum_flow(csr_matrix(matrix.astype(int)), source_index, puits_index)
+        t1 = timer()
         flow_array = self.result.flow.toarray()
 
         for name_long in self.pos_long.keys():
@@ -220,6 +228,7 @@ class Flow(Algo):
                     self.values[self.names.index(name_court)] -= flow_array[i][j]
 
         #print(self.solution)
+        return t1-t0
 
 """
 Algrithme implémentant l'optimisation par algorithme glouton
@@ -298,8 +307,85 @@ class Greedy(Algo):
             else :
                 self.compAndUpdate(best)
 
+class AlgoNaif(Algo):
+    def __init__(self, tab, names):
+        super().__init__(tab, names)
+        self.name ="Naif"
+
+    def corrList(self,corres):
+        L = []
+        for c in corres :
+            if str(c) in self.pos_long.keys():
+                long = c
+                for short in corres[c]:
+                    L.append([long,short])
+        return L
+
+    def compensationList(self, poslong,poscourt,corres):
+
+        posLong = copy.deepcopy(poslong)
+        posShort = copy.deepcopy(poscourt)
+
+        L = self.corrList(corres)
+
+        for x in L :
+            long,short = x
+            diff = posLong[long] - posShort[short]
+
+            if diff >= 0:
+                posLong[long] = diff
+                posShort[short] = 0
+
+            else :
+                posShort[short] = -diff
+                posLong[long] = 0
+
+        return posLong, posShort
+
+
+
+    def comparecompensation(self):
+
+        L= self.corrList(self.correlations)
+        print(L)
+
+        permutations = list((itertools.permutations(L)))
+
+        meilleureCompensation = sum([self.pos_long[c] for c in self.pos_long])
+        meilleurePermutation = L
+
+        for perm in permutations :
+            comp = sum(self.compensationList(self.pos_long,self.pos_court,perm)[0].values())
+
+            if comp == 0:
+                return perm, comp
+
+            if comp < meilleureCompensation :
+                meilleureCompensation = comp
+                meilleurePermutation = perm
+
+
+        return meilleurePermutation, meilleureCompensation
+
+    def optimize(self):
+        Perm, Comp = self.comparecompensation()
+        for x in Perm :
+            long, short = x
+            diff = self.pos_long[long] - self.pos_court[short]
+
+            if diff >= 0:
+                self.values[self.names.index(long)] = diff
+                self.values[self.names.index(short)] = 0
+                self.solution[(long,short)]= diff
+
+            else :
+                self.values[self.names.index(short)] = -diff
+                self.values[self.names.index(long)] = 0
+                self.solution[(long,short)]= -diff
+
+
 def main():
-    tab, names = creer_exemple_simple(30)
+    tab, names = creer_exemple_simple(20)
     algo = Greedy(tab, names)
     algo.optimize()
     algo.write_to_excel("greedy.xlsx")
@@ -311,4 +397,7 @@ def main():
     algooplin.write_to_excel("oplin.xlsx")
 
 if __name__ == "__main__":
-    main()
+    tab, names = creer_exemple_simple(4)
+    algo = AlgoNaif(tab, names)
+    algo.optimize()
+    algo.write_to_excel("naif.xlsx")

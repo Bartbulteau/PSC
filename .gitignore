@@ -9,3 +9,5 @@ Algos_old.py
 *.csv
 *.json
 old
+*.png
+*.pdf
